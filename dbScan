@@ -6,22 +6,20 @@
 
 typedef struct {
     double x, y;
-    int cluster_id; // Cluster assignment (-1 = noise, 0 = unassigned, >0 = cluster number)
-    int visited;    // 0 = not visited, 1 = visited
-    int type;       // 0 = unclassified, 1 = core, 2 = border, 3 = noise
+    int cluster_id;
+    int visited;
+    int type;
 } Point;
 
 Point points[MAX_POINTS];
-int n;        // Number of points
-double eps;   // Neighborhood radius
-int minPts;   // Minimum points for core point
+int n;
+double eps;
+int minPts;
 
-// Function to calculate Euclidean distance
 double distance(Point a, Point b) {
     return sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));
 }
 
-// Get neighbors of a point (returns count)
 int getNeighbors(int index, int neighbors[]) {
     int count = 0;
     for (int i = 0; i < n; i++) {
@@ -32,26 +30,17 @@ int getNeighbors(int index, int neighbors[]) {
     return count;
 }
 
-// Expand a cluster from a core point
 void expandCluster(int index, int cluster_id) {
     int neighbors[MAX_POINTS];
     int neighbor_count = getNeighbors(index, neighbors);
-
-    // Mark core point
     points[index].cluster_id = cluster_id;
     points[index].type = 1;
-
-    // Process all neighbors
     for (int i = 0; i < neighbor_count; i++) {
         int neighbor_index = neighbors[i];
-
         if (!points[neighbor_index].visited) {
             points[neighbor_index].visited = 1;
-
             int new_neighbors[MAX_POINTS];
             int new_count = getNeighbors(neighbor_index, new_neighbors);
-
-            // If neighbor is also a core point, merge neighborhoods
             if (new_count + 1 >= minPts) {
                 for (int j = 0; j < new_count; j++) {
                     int new_idx = new_neighbors[j];
@@ -68,26 +57,19 @@ void expandCluster(int index, int cluster_id) {
                 }
             }
         }
-
-        // Assign cluster if not yet assigned
         if (points[neighbor_index].cluster_id == 0) {
             points[neighbor_index].cluster_id = cluster_id;
         }
     }
 }
 
-// DBSCAN main function
 void dbscan() {
     int cluster_id = 0;
-
     for (int i = 0; i < n; i++) {
         if (points[i].visited) continue;
         points[i].visited = 1;
-
         int neighbors[MAX_POINTS];
         int neighbor_count = getNeighbors(i, neighbors);
-
-        // Not enough neighbors => noise
         if (neighbor_count + 1 < minPts) {
             points[i].cluster_id = -1;
             points[i].type = 3;
@@ -96,8 +78,6 @@ void dbscan() {
             expandCluster(i, cluster_id);
         }
     }
-
-    // Classify border points
     for (int i = 0; i < n; i++) {
         if (points[i].cluster_id > 0 && points[i].type != 1) {
             int neighbors[MAX_POINTS];
@@ -110,12 +90,11 @@ void dbscan() {
                 }
             }
             if (nearCore)
-                points[i].type = 2; // Border
+                points[i].type = 2;
         }
     }
 }
 
-// Print clustering results
 void printResults() {
     printf("\n--- DBSCAN Clustering Results ---\n");
     for (int i = 0; i < n; i++) {
@@ -125,19 +104,16 @@ void printResults() {
         else
             printf("Cluster %d\n", points[i].cluster_id);
     }
-
     printf("\nCore Points:\n");
     for (int i = 0; i < n; i++) {
         if (points[i].type == 1)
             printf("(%.2f, %.2f)\n", points[i].x, points[i].y);
     }
-
     printf("\nBorder Points:\n");
     for (int i = 0; i < n; i++) {
         if (points[i].type == 2)
             printf("(%.2f, %.2f)\n", points[i].x, points[i].y);
     }
-
     printf("\nNoise Points:\n");
     for (int i = 0; i < n; i++) {
         if (points[i].type == 3)
@@ -148,12 +124,10 @@ void printResults() {
 int main() {
     printf("Enter number of points: ");
     scanf("%d", &n);
-
     if (n > MAX_POINTS) {
         printf("Maximum allowed points is %d\n", MAX_POINTS);
         return 1;
     }
-
     printf("Enter %d points (x y):\n", n);
     for (int i = 0; i < n; i++) {
         scanf("%lf %lf", &points[i].x, &points[i].y);
@@ -161,14 +135,11 @@ int main() {
         points[i].cluster_id = 0;
         points[i].type = 0;
     }
-
     printf("Enter eps (neighborhood radius): ");
     scanf("%lf", &eps);
     printf("Enter minPts (minimum points in cluster): ");
     scanf("%d", &minPts);
-
     dbscan();
     printResults();
-
     return 0;
 }
