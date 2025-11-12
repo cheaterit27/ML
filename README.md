@@ -1,3 +1,3 @@
-# EVeryone should top ML Lab Exam
+# Everyone should top ML Lab Exam
 
 ## Consider this repo as your saviour
